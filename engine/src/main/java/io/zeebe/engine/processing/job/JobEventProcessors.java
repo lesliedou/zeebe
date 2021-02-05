@@ -32,6 +32,7 @@ public final class JobEventProcessors {
     final var jobErrorThrownProcessor = new JobErrorThrownProcessor(zeebeState);
 
     typedRecordProcessors
+        // TODO remove
         .onEvent(
             ValueType.JOB,
             JobIntent.CREATED,
