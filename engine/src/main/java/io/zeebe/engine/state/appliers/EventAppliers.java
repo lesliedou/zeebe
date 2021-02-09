@@ -53,6 +53,7 @@ public final class EventAppliers implements EventApplier {
   private void registerJobIntentEventAppliers(final ZeebeState state) {
     register(JobIntent.CREATED, new JobCreatedApplier(state));
     register(JobIntent.COMPLETED, new JobCompletedEventApplier(state));
+    register(JobIntent.FAILED, new JobFailedApplier(state));
   }
 
   private <I extends Intent> void register(final I intent, final TypedEventApplier<I, ?> applier) {

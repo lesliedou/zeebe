@@ -43,7 +43,13 @@ public final class MigratedStreamProcessors {
     MIGRATED_VALUE_TYPES.put(
         ValueType.JOB,
         MIGRATED_INTENT_FILTER_FACTORY.apply(
-            List.of(JobIntent.CREATE, JobIntent.CREATED, JobIntent.COMPLETE, JobIntent.COMPLETED)));
+            List.of(
+                JobIntent.CREATE,
+                JobIntent.CREATED,
+                JobIntent.COMPLETE,
+                JobIntent.COMPLETED,
+                JobIntent.FAIL,
+                JobIntent.FAILED)));
     MIGRATED_BPMN_PROCESSORS.add(BpmnElementType.TESTING_ONLY);
 
     MIGRATED_VALUE_TYPES.put(ValueType.ERROR, MIGRATED);
