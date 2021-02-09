@@ -32,18 +32,6 @@ public final class JobEventProcessors {
     final var jobErrorThrownProcessor = new JobErrorThrownProcessor(zeebeState);
 
     typedRecordProcessors
-        // TODO remove
-        .onEvent(
-            ValueType.JOB,
-            JobIntent.CREATED,
-            new JobCreatedProcessor(zeebeState.getElementInstanceState()))
-        .onEvent(
-            ValueType.JOB,
-            JobIntent.COMPLETED,
-            new JobCompletedEventProcessor(
-                zeebeState.getElementInstanceState(),
-                zeebeState.getEventScopeInstanceState(),
-                zeebeState.getVariableState()))
         .onCommand(ValueType.JOB, JobIntent.CREATE, new CreateProcessor())
         .onCommand(
             ValueType.JOB, JobIntent.COMPLETE, new CompleteProcessor(zeebeState, stateWriter))
