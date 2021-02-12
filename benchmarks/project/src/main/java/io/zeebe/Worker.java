@@ -15,6 +15,8 @@
  */
 package io.zeebe;
 
+import static io.zeebe.client.api.worker.BackoffSupplier.newBackoffBuilder;
+
 import io.zeebe.client.ZeebeClient;
 import io.zeebe.client.ZeebeClientBuilder;
 import io.zeebe.client.api.command.FinalCommandStep;
@@ -32,7 +34,7 @@ public class Worker extends App {
 
   private final AppCfg appCfg;
 
-  Worker(AppCfg appCfg) {
+  Worker(final AppCfg appCfg) {
     this.appCfg = appCfg;
   }
 
@@ -62,12 +64,13 @@ public class Worker extends App {
                   } else {
                     try {
                       Thread.sleep(completionDelay);
-                    } catch (Exception e) {
+                    } catch (final Exception e) {
                       e.printStackTrace();
                     }
                     requestFutures.add(command.send());
                   }
                 })
+            .backoffSupplier(newBackoffBuilder().minDelay(250L).backoffFactor(2).build())
             .open();
 
     final ResponseChecker responseChecker = new ResponseChecker(requestFutures);
@@ -109,7 +112,7 @@ public class Worker extends App {
     return builder.build();
   }
 
-  public static void main(String[] args) {
+  public static void main(final String[] args) {
     createApp(Worker::new);
   }
 
