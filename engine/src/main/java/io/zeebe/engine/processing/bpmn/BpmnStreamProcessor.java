@@ -104,8 +104,9 @@ public final class BpmnStreamProcessor implements TypedRecordProcessor<WorkflowI
 
     switch (intent) {
       case ACTIVATE_ELEMENT:
+        // todo (#6202): cleanup feature toggle
         if (MigratedStreamProcessors.isMigrated(context.getBpmnElementType())) {
-          // TODO (saig0): invoke the migrated processor to activate the element
+          processor.onActivate(element, context);
         } else {
           processor.onActivating(element, context);
         }

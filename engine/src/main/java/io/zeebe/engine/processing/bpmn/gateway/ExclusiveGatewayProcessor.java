@@ -11,6 +11,7 @@ import static io.zeebe.util.buffer.BufferUtil.bufferAsString;
 
 import io.zeebe.el.Expression;
 import io.zeebe.engine.processing.bpmn.BpmnElementContext;
+import io.zeebe.engine.processing.bpmn.BpmnElementContextImpl;
 import io.zeebe.engine.processing.bpmn.BpmnElementProcessor;
 import io.zeebe.engine.processing.bpmn.BpmnProcessingException;
 import io.zeebe.engine.processing.bpmn.behavior.BpmnBehaviors;
@@ -54,6 +55,12 @@ public final class ExclusiveGatewayProcessor
   @Override
   public Class<ExecutableExclusiveGateway> getType() {
     return ExecutableExclusiveGateway.class;
+  }
+
+  @Override
+  public void onActivate(
+      final ExecutableExclusiveGateway element, final BpmnElementContextImpl context) {
+    // todo (@korthout): implement
   }
 
   @Override
