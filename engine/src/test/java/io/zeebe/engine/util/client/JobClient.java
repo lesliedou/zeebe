@@ -49,6 +49,7 @@ public final class JobClient {
 
   public JobClient ofInstance(final long workflowInstanceKey) {
     this.workflowInstanceKey = workflowInstanceKey;
+    jobRecord.setWorkflowInstanceKey(workflowInstanceKey);
     return this;
   }
 

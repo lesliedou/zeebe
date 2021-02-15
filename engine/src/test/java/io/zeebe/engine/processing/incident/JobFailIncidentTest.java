@@ -111,7 +111,8 @@ public final class JobFailIncidentTest {
             .withWorkflowInstanceKey(workflowInstanceKey)
             .getFirst();
 
-    assertThat(incidentCommand.getSourceRecordPosition()).isEqualTo(failedEvent.getPosition());
+    assertThat(incidentCommand.getSourceRecordPosition())
+        .isEqualTo(failedEvent.getSourceRecordPosition());
     assertThat(incidentEvent.getKey()).isGreaterThan(0);
 
     assertThat(incidentEvent.getValue())
@@ -144,9 +145,9 @@ public final class JobFailIncidentTest {
             .withIntent(WorkflowInstanceIntent.ELEMENT_ACTIVATED)
             .withWorkflowInstanceKey(workflowInstanceKey)
             .getFirst();
-    final Record failedEvent =
+    final Record failCommand =
         RecordingExporter.jobRecords()
-            .withIntent(JobIntent.FAILED)
+            .withIntent(JobIntent.FAIL)
             .withWorkflowInstanceKey(workflowInstanceKey)
             .getFirst();
 
@@ -161,7 +162,7 @@ public final class JobFailIncidentTest {
             .withIntent(IncidentIntent.CREATED)
             .getFirst();
 
-    assertThat(incidentCommand.getSourceRecordPosition()).isEqualTo(failedEvent.getPosition());
+    assertThat(incidentCommand.getSourceRecordPosition()).isEqualTo(failCommand.getPosition());
     assertThat(incidentEvent.getKey()).isGreaterThan(0);
     assertThat(incidentEvent.getValue())
         .hasErrorType(ErrorType.JOB_NO_RETRIES)

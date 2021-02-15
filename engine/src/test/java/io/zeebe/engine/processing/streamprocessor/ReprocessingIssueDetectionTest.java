@@ -23,9 +23,11 @@ import io.zeebe.test.util.record.RecordingExporterTestWatcher;
 import io.zeebe.util.health.HealthStatus;
 import org.awaitility.Awaitility;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
+@Ignore
 public final class ReprocessingIssueDetectionTest {
 
   @Rule public final EngineRule engine = EngineRule.singlePartition();
