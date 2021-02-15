@@ -33,9 +33,8 @@ public final class JobEventProcessors {
 
     typedRecordProcessors
         .onCommand(ValueType.JOB, JobIntent.CREATE, new CreateProcessor())
-        .onCommand(
-            ValueType.JOB, JobIntent.COMPLETE, new CompleteProcessor(zeebeState, stateWriter))
-        .onCommand(ValueType.JOB, JobIntent.FAIL, new FailProcessor(zeebeState, stateWriter))
+        .onCommand(ValueType.JOB, JobIntent.COMPLETE, new CompleteProcessor(zeebeState))
+        .onCommand(ValueType.JOB, JobIntent.FAIL, new FailProcessor(zeebeState))
         .onCommand(ValueType.JOB, JobIntent.THROW_ERROR, new JobThrowErrorProcessor(jobState))
         .onEvent(ValueType.JOB, JobIntent.ERROR_THROWN, jobErrorThrownProcessor)
         .onCommand(ValueType.JOB, JobIntent.TIME_OUT, new TimeOutProcessor(jobState))

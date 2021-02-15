@@ -12,11 +12,13 @@ import static io.zeebe.util.buffer.BufferUtil.wrapString;
 import io.zeebe.engine.processing.streamprocessor.CommandProcessor;
 import io.zeebe.engine.processing.streamprocessor.TypedRecord;
 import io.zeebe.engine.processing.streamprocessor.writers.StateWriter;
+import io.zeebe.engine.processing.streamprocessor.writers.TypedCommandWriter;
 import io.zeebe.engine.state.ZeebeState;
 import io.zeebe.engine.state.immutable.JobState;
 import io.zeebe.protocol.impl.record.value.incident.IncidentRecord;
 import io.zeebe.protocol.impl.record.value.job.JobRecord;
 import io.zeebe.protocol.record.intent.IncidentIntent;
+import io.zeebe.protocol.record.intent.Intent;
 import io.zeebe.protocol.record.intent.JobIntent;
 import io.zeebe.protocol.record.value.ErrorType;
 import org.agrona.DirectBuffer;
@@ -27,13 +29,12 @@ public final class FailProcessor implements CommandProcessor<JobRecord> {
   private final IncidentRecord incidentEvent = new IncidentRecord();
 
   private final JobState jobState;
-  private final StateWriter stateWriter;
-  private final DefaultJobCommandProcessor<JobRecord> defaultProcessor;
+  private final DefaultJobCommandPreconditionGuard<JobRecord> defaultProcessor;
 
-  public FailProcessor(final ZeebeState state, final StateWriter stateWriter) {
+  public FailProcessor(final ZeebeState state) {
     jobState = state.getJobState();
-    this.stateWriter = stateWriter;
-    defaultProcessor = new DefaultJobCommandProcessor<>("fail", jobState, this::acceptCommand);
+    defaultProcessor =
+        new DefaultJobCommandPreconditionGuard<>("fail", jobState, this::acceptCommand);
   }
 
   @Override
@@ -42,16 +43,13 @@ public final class FailProcessor implements CommandProcessor<JobRecord> {
     return defaultProcessor.onCommand(command, commandControl);
   }
 
-  private void acceptCommand(
-      final TypedRecord<JobRecord> command, final CommandControl<JobRecord> commandControl) {
-    final long key = command.getKey();
-    final JobRecord failedJob = jobState.getJob(key);
-    failedJob.setRetries(command.getValue().getRetries());
-    failedJob.setErrorMessage(command.getValue().getErrorMessageBuffer());
-    commandControl.accept(JobIntent.FAILED, failedJob);
-
-    final JobRecord value = failedJob;
-
+  @Override
+  public void afterAccept(
+      final TypedCommandWriter commandWriter,
+      final StateWriter stateWriter,
+      final long key,
+      final Intent intent,
+      final JobRecord value) {
     if (value.getRetries() <= 0) {
       final DirectBuffer jobErrorMessage = value.getErrorMessageBuffer();
       DirectBuffer incidentErrorMessage = DEFAULT_ERROR_MESSAGE;
@@ -71,9 +69,18 @@ public final class FailProcessor implements CommandProcessor<JobRecord> {
           .setJobKey(key)
           .setVariableScopeKey(value.getElementInstanceKey());
 
-      // TODO use the command writer instead
-      // TODO change order of events written. Failed event must be written before incident
-      stateWriter.appendFollowUpEvent(key, IncidentIntent.CREATE, incidentEvent);
+      commandWriter.appendFollowUpCommand(key, IncidentIntent.CREATE, incidentEvent);
     }
+  }
+
+  private void acceptCommand(
+      final TypedRecord<JobRecord> command, final CommandControl<JobRecord> commandControl) {
+    final long key = command.getKey();
+    final JobRecord failedJob = jobState.getJob(key);
+    failedJob.setRetries(command.getValue().getRetries());
+    failedJob.setErrorMessage(command.getValue().getErrorMessageBuffer());
+    commandControl.accept(JobIntent.FAILED, failedJob);
+
+    final JobRecord value = failedJob;
   }
 }
