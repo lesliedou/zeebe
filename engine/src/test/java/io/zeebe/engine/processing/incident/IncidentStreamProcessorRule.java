@@ -22,7 +22,6 @@ import io.zeebe.engine.processing.common.CatchEventBehavior;
 import io.zeebe.engine.processing.common.ExpressionProcessor;
 import io.zeebe.engine.processing.job.JobEventProcessors;
 import io.zeebe.engine.processing.message.command.SubscriptionCommandSender;
-import io.zeebe.engine.processing.streamprocessor.writers.StateWriter;
 import io.zeebe.engine.processing.timer.DueDateTimerChecker;
 import io.zeebe.engine.state.ZeebeState;
 import io.zeebe.engine.state.mutable.MutableWorkflowState;
@@ -102,8 +101,7 @@ public final class IncidentStreamProcessorRule extends ExternalResource {
                   zeebeState,
                   type -> {},
                   Integer.MAX_VALUE,
-                  new StateWriter(
-                      processingContext.getLogStreamWriter(), processingContext.getEventApplier()));
+                  processingContext.getWriters().state());
 
           IncidentEventProcessors.addProcessors(
               typedRecordProcessors, zeebeState, stepProcessor, jobErrorThrownProcessor);
