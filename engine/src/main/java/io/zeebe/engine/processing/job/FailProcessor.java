@@ -43,6 +43,15 @@ public final class FailProcessor implements CommandProcessor<JobRecord> {
     return defaultProcessor.onCommand(command, commandControl);
   }
 
+  private void acceptCommand(
+      final TypedRecord<JobRecord> command, final CommandControl<JobRecord> commandControl) {
+    final long key = command.getKey();
+    final JobRecord failedJob = jobState.getJob(key);
+    failedJob.setRetries(command.getValue().getRetries());
+    failedJob.setErrorMessage(command.getValue().getErrorMessageBuffer());
+    commandControl.accept(JobIntent.FAILED, failedJob);
+  }
+
   @Override
   public void afterAccept(
       final TypedCommandWriter commandWriter,
@@ -71,16 +80,5 @@ public final class FailProcessor implements CommandProcessor<JobRecord> {
 
       commandWriter.appendFollowUpCommand(key, IncidentIntent.CREATE, incidentEvent);
     }
-  }
-
-  private void acceptCommand(
-      final TypedRecord<JobRecord> command, final CommandControl<JobRecord> commandControl) {
-    final long key = command.getKey();
-    final JobRecord failedJob = jobState.getJob(key);
-    failedJob.setRetries(command.getValue().getRetries());
-    failedJob.setErrorMessage(command.getValue().getErrorMessageBuffer());
-    commandControl.accept(JobIntent.FAILED, failedJob);
-
-    final JobRecord value = failedJob;
   }
 }

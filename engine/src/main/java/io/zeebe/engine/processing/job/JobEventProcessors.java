@@ -10,7 +10,6 @@ package io.zeebe.engine.processing.job;
 import io.zeebe.engine.processing.streamprocessor.ReadonlyProcessingContext;
 import io.zeebe.engine.processing.streamprocessor.StreamProcessorLifecycleAware;
 import io.zeebe.engine.processing.streamprocessor.TypedRecordProcessors;
-import io.zeebe.engine.processing.streamprocessor.writers.StateWriter;
 import io.zeebe.engine.state.ZeebeState;
 import io.zeebe.protocol.record.ValueType;
 import io.zeebe.protocol.record.intent.JobBatchIntent;
@@ -23,8 +22,7 @@ public final class JobEventProcessors {
       final TypedRecordProcessors typedRecordProcessors,
       final ZeebeState zeebeState,
       final Consumer<String> onJobsAvailableCallback,
-      final int maxRecordSize,
-      final StateWriter stateWriter) {
+      final int maxRecordSize) {
 
     final var jobState = zeebeState.getJobState();
     final var keyGenerator = zeebeState.getKeyGenerator();
