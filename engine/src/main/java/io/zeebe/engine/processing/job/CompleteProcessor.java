@@ -60,21 +60,21 @@ public final class CompleteProcessor implements CommandProcessor<JobRecord> {
       final Intent intent,
       final JobRecord value) {
 
-    final var elementInstanceKey = value.getElementInstanceKey();
+    final var serviceTaskKey = value.getElementInstanceKey();
 
-    final ElementInstance elementInstance = elementInstanceState.getInstance(elementInstanceKey);
+    final ElementInstance serviceTask = elementInstanceState.getInstance(serviceTaskKey);
 
-    if (elementInstance != null) {
-      final long scopeKey = elementInstance.getValue().getFlowScopeKey();
+    if (serviceTask != null) {
+      final long scopeKey = serviceTask.getValue().getFlowScopeKey();
       final ElementInstance scopeInstance = elementInstanceState.getInstance(scopeKey);
 
       if (scopeInstance != null && scopeInstance.isActive()) {
-        final WorkflowInstanceRecord workflowInstanceRecord = elementInstance.getValue();
+        final WorkflowInstanceRecord workflowInstanceRecord = serviceTask.getValue();
 
         // TODO send out COMPLETE_ELEMENT command when available, rename method; switch out for
         // command writer
         stateWriter.appendFollowUpEvent(
-            elementInstanceKey, WorkflowInstanceIntent.ELEMENT_COMPLETING, workflowInstanceRecord);
+            serviceTaskKey, WorkflowInstanceIntent.ELEMENT_COMPLETING, workflowInstanceRecord);
       }
     }
   }
