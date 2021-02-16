@@ -23,6 +23,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import io.atomix.raft.storage.log.RaftLog;
 import io.atomix.raft.storage.log.RaftLogReader;
 import io.atomix.raft.storage.log.RaftLogReader.Mode;
+import io.atomix.raft.storage.log.entry.RaftLogEntry;
+import io.atomix.storage.journal.Indexed;
 import io.zeebe.snapshots.raft.SnapshotChunkReader;
 import java.nio.ByteBuffer;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -52,6 +54,7 @@ public final class RaftMemberContext {
   private long failureTime;
   private volatile RaftLogReader reader;
   private SnapshotChunkReader snapshotChunkReader;
+  private Indexed<RaftLogEntry> currentEntry;
 
   RaftMemberContext(
       final DefaultRaftMember member,
@@ -303,15 +306,6 @@ public final class RaftMemberContext {
   }
 
   /**
-   * Returns the member log reader.
-   *
-   * @return The member log reader.
-   */
-  public RaftLogReader getLogReader() {
-    return reader;
-  }
-
-  /**
    * Returns the member's match index.
    *
    * @return The member's match index.
@@ -417,5 +411,22 @@ public final class RaftMemberContext {
 
   public void setSnapshotChunkReader(final SnapshotChunkReader snapshotChunkReader) {
     this.snapshotChunkReader = snapshotChunkReader;
+  }
+
+  public boolean hasNextEntry() {
+    return reader.hasNext();
+  }
+
+  public Indexed<RaftLogEntry> nextEntry() {
+    currentEntry = reader.next();
+    return currentEntry;
+  }
+
+  public Indexed<RaftLogEntry> getCurrentEntry() {
+    return currentEntry;
+  }
+
+  public void reset(final long index) {
+    reader.reset(index);
   }
 }
