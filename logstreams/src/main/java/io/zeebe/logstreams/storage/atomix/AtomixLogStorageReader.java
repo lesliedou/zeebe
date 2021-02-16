@@ -17,12 +17,9 @@ import org.agrona.DirectBuffer;
 
 public final class AtomixLogStorageReader implements LogStorageReader {
   private final RaftLogReader reader;
-  private final ZeebeIndexMapping zeebeIndexMapping;
 
-  public AtomixLogStorageReader(
-      final ZeebeIndexMapping zeebeIndexMapping, final RaftLogReader reader) {
+  public AtomixLogStorageReader(final RaftLogReader reader) {
     this.reader = reader;
-    this.zeebeIndexMapping = zeebeIndexMapping;
   }
 
   /**
@@ -38,8 +35,9 @@ public final class AtomixLogStorageReader implements LogStorageReader {
    */
   @Override
   public boolean isEmpty() {
+    // although seemingly inefficient, the log will contain mostly ZeebeEntry entries and a few
+    // InitialEntry, so this should be rather fast in practice
     reader.reset();
-
     while (reader.hasNext()) {
       if (reader.next().type() == ZeebeEntry.class) {
         return false;
@@ -50,11 +48,14 @@ public final class AtomixLogStorageReader implements LogStorageReader {
 
   @Override
   public long read(final DirectBuffer readBuffer, final long address) {
-    if (address < reader.getFirstIndex()) {
+    final long index = reader.reset(address);
+
+    // TODO: check if important to return OP_RESULT_INVALID_ADDR if we tried to seek before
+    if (index > address) {
       return LogStorage.OP_RESULT_INVALID_ADDR;
     }
 
-    if (address > reader.getLastIndex()) {
+    if (!reader.hasNext()) {
       return LogStorage.OP_RESULT_NO_DATA;
     }
 
@@ -75,31 +76,12 @@ public final class AtomixLogStorageReader implements LogStorageReader {
     return entry.index() + 1;
   }
 
-  /**
-   * This is currently a quite slow implementation as Atomix does not support navigating backwards;
-   * it would require a refactor there if this is ever too slow.
-   *
-   * <p>{@inheritDoc}
-   */
   @Override
   public long readLastBlock(final DirectBuffer readBuffer) {
-    final var firstIndex = reader.getFirstIndex();
-    var index = reader.getLastIndex();
-
-    do {
-      reader.reset(index);
-      if (!reader.hasNext()) {
-        break;
-      }
-
-      final var indexed = reader.next();
-      if (indexed.type() == ZeebeEntry.class) {
-        wrapEntryData(indexed.cast(), readBuffer);
-        return indexed.index() + 1;
-      }
-
-      index--;
-    } while (index >= firstIndex);
+    final long index = reader.seekToAsqn(Long.MAX_VALUE);
+    if (index > 0) {
+      return index;
+    }
 
     return LogStorage.OP_RESULT_NO_DATA;
   }
@@ -111,33 +93,17 @@ public final class AtomixLogStorageReader implements LogStorageReader {
    */
   @Override
   public long lookUpApproximateAddress(final long position) {
-    final var low = reader.getFirstIndex();
-    final var high = reader.getLastIndex();
-
     if (position == Long.MIN_VALUE) {
-      final var optionalEntry = findEntry(reader.getFirstIndex());
+      final var optionalEntry = findEntry(position);
       return optionalEntry.map(Indexed::index).orElse(LogStorage.OP_RESULT_INVALID_ADDR);
     }
 
-    // when the log is empty, the last index is defined as first index - 1
-    if (low >= high) {
-      // need a better way to figure out how to know if its empty
-      if (findEntry(low).isEmpty()) {
-        return LogStorage.OP_RESULT_INVALID_ADDR;
-      }
-
-      return low;
+    final long address = reader.seekToAsqn(position);
+    if (!reader.hasNext()) {
+      return LogStorage.OP_RESULT_NO_DATA;
     }
 
-    final var index = zeebeIndexMapping.lookupPosition(position);
-    final long result;
-    if (index == -1) {
-      result = low;
-    } else {
-      result = index;
-    }
-
-    return result;
+    return address;
   }
 
   @Override
@@ -151,16 +117,6 @@ public final class AtomixLogStorageReader implements LogStorageReader {
    * @param index index to seek to
    */
   public Optional<Indexed<ZeebeEntry>> findEntry(final long index) {
-    if (reader.getCurrentIndex() == index) {
-      final var entry = reader.getCurrentEntry();
-      if (entry != null && entry.type().equals(ZeebeEntry.class)) {
-        return Optional.of(reader.getCurrentEntry().cast());
-      }
-    }
-
-    // in the future, reset/seek to the same index will be a NOOP so we can just call it all the
-    // time; right now it's a bit slow, but we will immediately implement the new journal so this
-    // is fine
     reader.reset(index);
 
     while (reader.hasNext()) {

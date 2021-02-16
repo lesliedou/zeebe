@@ -15,6 +15,8 @@ import java.util.Optional;
 /**
  * Implementations of this interface should provide the correct {@link Indexed<ZeebeEntry>} when
  * given a Record#getPosition()
+ *
+ * TODO: consider getting rid of this now that the ASQN stuff is supported directly through the log
  */
 @FunctionalInterface
 public interface AtomixRecordEntrySupplier extends AutoCloseable {

@@ -192,7 +192,6 @@ public class RaftTest extends ConcurrentTestCase {
         RaftStorage.builder()
             .withStorageLevel(StorageLevel.DISK)
             .withDirectory(directory)
-            .withMaxEntriesPerSegment(10)
             .withSnapshotStore(new TestSnapshotStore(new AtomicReference<>()))
             .withMaxSegmentSize(1024 * 10)
             .withNamespace(RaftNamespaces.RAFT_STORAGE);

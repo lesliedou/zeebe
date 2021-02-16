@@ -11,32 +11,24 @@ import io.atomix.raft.storage.log.RaftLogReader;
 import io.atomix.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.storage.journal.Indexed;
 import io.zeebe.broker.system.partitions.AtomixRecordEntrySupplier;
-import io.zeebe.logstreams.storage.atomix.ZeebeIndexMapping;
 import java.util.Optional;
 
 public final class AtomixRecordEntrySupplierImpl implements AtomixRecordEntrySupplier {
-  private final ZeebeIndexMapping indexMapping;
   private final RaftLogReader reader;
 
-  public AtomixRecordEntrySupplierImpl(
-      final ZeebeIndexMapping indexMapping, final RaftLogReader reader) {
-    this.indexMapping = indexMapping;
+  public AtomixRecordEntrySupplierImpl(final RaftLogReader reader) {
     this.reader = reader;
   }
 
   @Override
   public Optional<Indexed<RaftLogEntry>> getIndexedEntry(final long position) {
-    final var index = indexMapping.lookupPosition(position);
-    if (index == -1) {
-      return Optional.empty();
-    }
+    // the index returned either means we are at the position, or at the nearest lower position, or
+    // at the very beginning of the log. in practice, this should always return the position unless
+    // there was a major bug and it doesn't exist, so always return the next entry for now.
+    reader.seekToAsqn(position);
 
-    reader.reset(index - 1);
     if (reader.hasNext()) {
-      final var indexedEntry = reader.next();
-      if (indexedEntry.index() < index) {
-        return Optional.of(indexedEntry);
-      }
+      return Optional.of(reader.next());
     }
 
     return Optional.empty();

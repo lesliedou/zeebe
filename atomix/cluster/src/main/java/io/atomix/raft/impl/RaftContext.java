@@ -369,7 +369,7 @@ public class RaftContext implements AutoCloseable {
     final long previousCommitIndex = this.commitIndex;
     if (commitIndex > previousCommitIndex) {
       this.commitIndex = commitIndex;
-      raftLog.commit(Math.min(commitIndex, raftLog.getLastIndex()));
+      raftLog.setCommitIndex(Math.min(commitIndex, raftLog.getLastIndex()));
       if (raftLog.shouldFlushExplicitly() && isLeader()) {
         // leader counts itself in quorum, so in order to commit the leader must persist
         raftLog.flush();

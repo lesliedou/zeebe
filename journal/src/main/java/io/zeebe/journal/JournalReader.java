@@ -31,15 +31,15 @@ public interface JournalReader extends Iterator<JournalRecord>, AutoCloseable {
    * @param index the index to seek to.
    * @return true if a record at the index exists, false otherwise.
    */
-  boolean seek(long index);
+  long seek(long index);
 
   /**
    * Seek to the first index of the journal. Equivalent to calling seek(journal.getFirstIndex()).
    */
-  void seekToFirst();
+  long seekToFirst();
 
   /** Seek to the last index of the journal. Equivalent to calling seek(journal.getLastIndex()). */
-  void seekToLast();
+  long seekToLast();
 
   /**
    * Seek to a record with the highest asqn less than or equal to the given asqn.
@@ -48,5 +48,8 @@ public interface JournalReader extends Iterator<JournalRecord>, AutoCloseable {
    * @return true if such a record exists, false if there are no records with asqn less than or
    *     equal to the given asqn.
    */
-  boolean seekToAsqn(long asqn);
+  long seekToAsqn(long asqn);
+
+  @Override
+  void close();
 }

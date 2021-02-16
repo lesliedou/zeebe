@@ -85,7 +85,7 @@ class SegmentedJournalReader implements JournalReader {
   }
 
   @Override
-  public boolean seek(final long index) {
+  public long seek(final long index) {
     // If the current segment is not open, it has been replaced. Reset the segments.
     if (!currentSegment.isOpen()) {
       seekToFirst();
@@ -98,23 +98,25 @@ class SegmentedJournalReader implements JournalReader {
     } else {
       currentReader.seek(index);
     }
-    return getNextIndex() == index;
+
+    return getNextIndex();
   }
 
   @Override
-  public void seekToFirst() {
+  public long seekToFirst() {
     replaceCurrentSegment(journal.getFirstSegment());
     previousEntry = null;
+    return journal.getFirstIndex();
   }
 
   @Override
-  public void seekToLast() {
+  public long seekToLast() {
     replaceCurrentSegment(journal.getLastSegment());
-    seek(journal.getLastIndex());
+    return seek(journal.getLastIndex());
   }
 
   @Override
-  public boolean seekToAsqn(final long asqn) {
+  public long seekToAsqn(final long asqn) {
     final var journalIndex = journal.getJournalIndex();
     final var index = journalIndex.lookupAsqn(asqn);
     if (index == null) {
@@ -138,7 +140,9 @@ class SegmentedJournalReader implements JournalReader {
       // TODO: Remove the duplicate seek. https://github.com/zeebe-io/zeebe/issues/6223
       return seek(record.index());
     }
-    return false;
+
+    // nothing was found, return to the start
+    return seekToFirst();
   }
 
   @Override

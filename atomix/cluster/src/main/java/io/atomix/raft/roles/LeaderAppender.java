@@ -55,7 +55,7 @@ final class LeaderAppender extends AbstractAppender {
   LeaderAppender(final LeaderRole leader) {
     super(leader.raft);
     leaderTime = System.currentTimeMillis();
-    leaderIndex = raft.getLog().getNextIndex();
+    leaderIndex = raft.getLog().getLastIndex();
     heartbeatTime = leaderTime;
     electionTimeout = raft.getElectionTimeout().toMillis();
     heartbeatInterval = raft.getHeartbeatInterval().toMillis();
