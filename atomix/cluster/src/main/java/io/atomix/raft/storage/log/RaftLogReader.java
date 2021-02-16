@@ -17,7 +17,6 @@
 package io.atomix.raft.storage.log;
 
 import io.atomix.raft.storage.log.entry.RaftLogEntry;
-import io.atomix.raft.zeebe.ZeebeEntry;
 import io.atomix.storage.journal.Indexed;
 import io.zeebe.journal.JournalReader;
 import io.zeebe.journal.JournalRecord;
@@ -44,8 +43,7 @@ public class RaftLogReader implements java.util.Iterator<Indexed<RaftLogEntry>>,
 
   @Override
   public boolean hasNext() {
-    final boolean isCommitBound = mode == Mode.COMMITS && nextIndex <= log.getCommitIndex();
-    return journalReader.hasNext() && !isCommitBound;
+    return (mode == Mode.ALL || nextIndex <= log.getCommitIndex()) && journalReader.hasNext();
   }
 
   @Override
@@ -84,18 +82,7 @@ public class RaftLogReader implements java.util.Iterator<Indexed<RaftLogEntry>>,
   }
 
   public long seekToAsqn(final long asqn) {
-    nextIndex = journalReader.seekToAsqn(asqn);
-
-    // should happen very seldom, as most of the time we seek to committed ASQNs; the solution is
-    // therefore not very efficient. should be optimized if this becomes more common.
-    // see https://github.com/zeebe-io/zeebe/issues/6343
-    if (mode == Mode.COMMITS) {
-      final long commitIndex = log.getCommitIndex();
-      if (nextIndex > commitIndex) {
-        seekToLastApplicationEntry(commitIndex);
-      }
-    }
-
+    nextIndex = journalReader.seekToAsqn(asqn, log.getCommitIndex());
     return nextIndex;
   }
 
@@ -127,33 +114,6 @@ public class RaftLogReader implements java.util.Iterator<Indexed<RaftLogEntry>>,
     }
 
     return log.getSerializer().deserialize(byteBufferView);
-  }
-
-  private void seekToLastApplicationEntry(final long upperBoundIndex) {
-    reset(upperBoundIndex);
-
-    while (hasNext()) {
-      final Indexed<RaftLogEntry> entry = next();
-      if (isApplicationEntry(entry)) {
-        // reset so we can read it next
-        reset(entry.index());
-        return;
-      } else {
-        // only way to iterate back is to seek to the previous index
-        reset(entry.index() - 1);
-
-        // if we will read the same index next, then it means we've reached the beginning of the log
-        // so there is no application entry
-        if (nextIndex == entry.index()) {
-          reset();
-          return;
-        }
-      }
-    }
-  }
-
-  private boolean isApplicationEntry(final Indexed<RaftLogEntry> entry) {
-    return entry.type() == ZeebeEntry.class;
   }
 
   /** Raft log reader mode. */

@@ -42,13 +42,26 @@ public interface JournalReader extends Iterator<JournalRecord>, AutoCloseable {
   long seekToLast();
 
   /**
-   * Seek to a record with the highest asqn less than or equal to the given asqn.
+   * Seek to a record with the highest ASQN less than or equal to the given asqn.
+   *
+   * <p>If there are no records with positive ASQNs, the read will be at the end of the log after
+   * this call.
+   *
+   * <p>If the log is empty, it will return false and the reader will be positioned at the beginning
+   * of the log.
+   *
+   * <p>If the first entry has an ASQN greater than the given asqn, it will return false, and the
+   * reader will be positioned at the beginning of the log.
+   *
+   * <p>If the log is not empty, and no entries have an ASQN less than or equal to the given asqn,
+   * but the first entry has ASQN equal to ASQN_IGNORE, it will return true, and the reader will be
+   * positioned at the beginning of the log.
    *
    * @param asqn application sequence number to seek
    * @return true if such a record exists, false if there are no records with asqn less than or
    *     equal to the given asqn.
    */
-  long seekToAsqn(long asqn);
+  long seekToAsqn(long asqn, long upperBoundIndex);
 
   @Override
   void close();

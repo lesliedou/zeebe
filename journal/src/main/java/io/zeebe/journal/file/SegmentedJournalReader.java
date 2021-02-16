@@ -116,7 +116,7 @@ class SegmentedJournalReader implements JournalReader {
   }
 
   @Override
-  public long seekToAsqn(final long asqn) {
+  public long seekToAsqn(final long asqn, final long upperBoundIndex) {
     final var journalIndex = journal.getJournalIndex();
     final var index = journalIndex.lookupAsqn(asqn);
     if (index == null) {
@@ -141,8 +141,7 @@ class SegmentedJournalReader implements JournalReader {
       return seek(record.index());
     }
 
-    // nothing was found, return to the start
-    return seekToFirst();
+    return getNextIndex();
   }
 
   @Override

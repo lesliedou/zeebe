@@ -8,6 +8,7 @@
 package io.zeebe.logstreams.storage.atomix;
 
 import io.atomix.raft.storage.log.RaftLogReader;
+import io.atomix.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.raft.zeebe.ZeebeEntry;
 import io.atomix.storage.journal.Indexed;
 import io.zeebe.logstreams.spi.LogStorage;
@@ -78,9 +79,14 @@ public final class AtomixLogStorageReader implements LogStorageReader {
 
   @Override
   public long readLastBlock(final DirectBuffer readBuffer) {
-    final long index = reader.seekToAsqn(Long.MAX_VALUE);
-    if (index > 0) {
-      return index;
+    reader.seekToAsqn(Long.MAX_VALUE);
+
+    if (reader.hasNext()) {
+      final Indexed<RaftLogEntry> entry = reader.next();
+      if (entry.type() == ZeebeEntry.class) {
+        wrapEntryData(entry.cast(), readBuffer);
+        return entry.index() + 1;
+      }
     }
 
     return LogStorage.OP_RESULT_NO_DATA;
